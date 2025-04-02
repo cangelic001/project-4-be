@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require("../middleware/verify-token.js");
-const Log = require("../models/log.js");
+const Entry = require("../models/entry.js");
 const router = express.Router();
 
 // add routes here
@@ -8,15 +8,15 @@ router.post("/", verifyToken, async (req, res) => {
   try {
     const { text } = req.body;
 
-    const log = await Log.create({
+    const entry = await Entry.create({
       title: req.body.title,
       text,
       author: req.user._id,
     });
 
-    const populatedLog = await Log.findById(log._id).populate("author");
+    const populatedEntry = await Entry.findById(entry._id).populate("author");
 
-    res.status(201).json(populatedLog);
+    res.status(201).json(populatedEntry);
   } catch (err) {
     res.status(500).json({ err: err.message });
   }
@@ -24,71 +24,71 @@ router.post("/", verifyToken, async (req, res) => {
 
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const logs = await Log.find({ author: req.user._id })
+    const entries = await Entry.find({ author: req.user._id })
       .populate("author")
       .sort({ createdAt: "desc" });
-    res.status(200).json(logs);
+    res.status(200).json(entries);
   } catch (err) {
     res.status(500).json({ err: err.message });
   }
 });
 
-router.get("/:logId", verifyToken, async (req, res) => {
+router.get("/:entryId", verifyToken, async (req, res) => {
   try {
-    const log = await Log.findById(req.params.logId).populate("author");
+    const entry = await Entry.findById(req.params.entryId).populate("author");
 
     // Check permissions:
-    if (!log.author.equals(req.user._id)) {
+    if (!entry.author.equals(req.user._id)) {
       return res.status(403).send("Unauthorized");
     }
-    res.status(200).json(log);
+    res.status(200).json(entry);
   } catch (err) {
     res.status(500).json({ err: err.message });
   }
 });
 
-router.put("/:logId", verifyToken, async (req, res) => {
+router.put("/:entryId", verifyToken, async (req, res) => {
   try {
-    // Find the log:
-    const log = await Log.findById(req.params.logId);
+    // Find the entry:
+    const entry = await Entry.findById(req.params.entryId);
 
     // Check if the logged-in user is the owner:
-    if (!log.author.equals(req.user._id)) {
+    if (!entry.author.equals(req.user._id)) {
       return res.status(403).json({ error: "You're not allowed to do that!" });
     }
 
     // Destructure only allowed fields:
     const { title, text } = req.body;
-    let updatedLogData = { title };
+    let updatedEntryData = { title };
 
     // If text is changed, reanalyze:
-    if (text && text !== log.text) {
+    if (text && text !== entry.text) {
 
-      updatedLogData.text = text;
+      updatedEntryData.text = text;
 
     }
 
-    // Update the log:
-    const updatedLog = await Log.findByIdAndUpdate(req.params.logId, updatedLogData, { new: true }).populate("author");
+    // Update the entry:
+    const updatedEntry = await Entry.findByIdAndUpdate(req.params.entryId, updatedEntryData, { new: true }).populate("author");
 
     // Send JSON response:
-    res.status(200).json(updatedLog);
+    res.status(200).json(updatedEntry);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 
-router.delete("/:logId", verifyToken, async (req, res) => {
+router.delete("/:entryId", verifyToken, async (req, res) => {
   try {
-    const log = await Log.findById(req.params.logId);
+    const entry = await Entry.findById(req.params.entryId);
 
-    if (!log.author.equals(req.user._id)) {
+    if (!entry.author.equals(req.user._id)) {
       return res.status(403).send("You're not allowed to do that!");
     }
 
-    const deletedlog = await Log.findByIdAndDelete(req.params.logId);
-    res.status(200).json(deletedlog);
+    const deletedEntry = await Entry.findByIdAndDelete(req.params.entryId);
+    res.status(200).json(deletedEntry);
   } catch (err) {
     res.status(500).json({ err: err.message });
   }

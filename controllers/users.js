@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Log = require("../models/log");
+const Entry = require("../models/entry");
 
 const verifyToken = require("../middleware/verify-token");
 
@@ -11,22 +11,22 @@ router.get("/:userId", verifyToken, async (req, res) => {
       return res.status(403).json({ err: "Unauthorized" });
     }
 
-    const logs = await Log.find({ author: req.params.userId })
+    const entries = await Entry.find({ author: req.params.userId })
       .sort({ createdAt: -1 }) // Sort by newest first
       .limit(7);
 
-    if (!logs.length) {
-      return res.status(404).json({ error: "No logs found." });
+    if (!entries.length) {
+      return res.status(404).json({ error: "No entries found." });
     }
 
-    const sentimentData = logs.map((log) => ({
-      date: log.createdAt.toISOString().split("T")[0], // Format: YYYY-MM-DD
-      score: log.analysis.sentiment.score,
+    const sentimentData = entries.map((entry) => ({
+      date: entry.createdAt.toISOString().split("T")[0], // Format: YYYY-MM-DD
+      score: entry.analysis.sentiment.score,
     }));
 
-    const emotionsData = logs.map((log) => ({
-      date: log.createdAt.toISOString().split("T")[0],
-      emotions: log.analysis.emotions,
+    const emotionsData = entries.map((entry) => ({
+      date: entry.createdAt.toISOString().split("T")[0],
+      emotions: entry.analysis.emotions,
     }));
 
     const countOccurrences = (items) => {
@@ -36,8 +36,8 @@ router.get("/:userId", verifyToken, async (req, res) => {
       }, {});
     };
 
-    const keywordData = countOccurrences(logs.flatMap((log) => log.analysis.keywords));
-    const entityData = countOccurrences(logs.flatMap((log) => log.analysis.entities));
+    const keywordData = countOccurrences(entries.flatMap((entry) => entry.analysis.keywords));
+    const entityData = countOccurrences(entries.flatMap((entry) => entry.analysis.entities));
 
 
     res.json({ sentimentData, emotionsData, keywordData, entityData });

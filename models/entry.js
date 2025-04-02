@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const logSchema = new mongoose.Schema(
+const entrySchema = new mongoose.Schema(
   {
     title: { type: String },
     text: { type: String, required: true },
@@ -24,6 +24,6 @@ const logSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Log = mongoose.model("log", logSchema);
+const Entry = mongoose.model("entry", entrySchema);
 
-module.exports = Log;
+module.exports = Entry;
